@@ -58,19 +58,19 @@ class ChatChannel(Channel):
                 group_name_white_list = config.get("group_name_white_list", [])
                 group_name_keyword_white_list = config.get("group_name_keyword_white_list", [])
                 if any(
-                    [
-                        group_name in group_name_white_list,
-                        "ALL_GROUP" in group_name_white_list,
-                        check_contain(group_name, group_name_keyword_white_list),
-                    ]
+                        [
+                            group_name in group_name_white_list,
+                            "ALL_GROUP" in group_name_white_list,
+                            check_contain(group_name, group_name_keyword_white_list),
+                        ]
                 ):
                     group_chat_in_one_session = conf().get("group_chat_in_one_session", [])
                     session_id = cmsg.actual_user_id
                     if any(
-                        [
-                            group_name in group_chat_in_one_session,
-                            "ALL_GROUP" in group_chat_in_one_session,
-                        ]
+                            [
+                                group_name in group_chat_in_one_session,
+                                "ALL_GROUP" in group_chat_in_one_session,
+                            ]
                     ):
                         session_id = group_id
                 else:
@@ -148,7 +148,7 @@ class ChatChannel(Channel):
                 else:
                     return None
             content = content.strip()
-            img_match_prefix = check_prefix(content, conf().get("image_create_prefix",[""]))
+            img_match_prefix = check_prefix(content, conf().get("image_create_prefix", [""]))
             if img_match_prefix:
                 content = content.replace(img_match_prefix, "", 1)
                 context.type = ContextType.IMAGE_CREATE
@@ -256,9 +256,9 @@ class ChatChannel(Channel):
                     if context.get("isgroup", False):
                         if not context.get("no_need_at", False):
                             reply_text = "@" + context["msg"].actual_user_nickname + "\n" + reply_text.strip()
-                        reply_text = conf().get("group_chat_reply_prefix", "") + reply_text + conf().get("group_chat_reply_suffix", "")
+                        reply_text = conf().get("group_chat_reply_prefix", "") + "\n" + reply_text + conf().get("group_chat_reply_suffix", "")
                     else:
-                        reply_text = conf().get("single_chat_reply_prefix", "") + reply_text + conf().get("single_chat_reply_suffix", "")
+                        reply_text = conf().get("single_chat_reply_prefix", "") + "\n" + reply_text + conf().get("single_chat_reply_suffix", "")
                     reply.content = reply_text
                 elif reply.type == ReplyType.ERROR or reply.type == ReplyType.INFO:
                     reply.content = "[" + str(reply.type) + "]\n" + reply.content
