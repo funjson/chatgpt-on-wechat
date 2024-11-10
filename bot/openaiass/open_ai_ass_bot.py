@@ -1,16 +1,12 @@
 # encoding:utf-8
-import time
 
+# from openai import OpenAI
 import openai
-import json
-from openai import OpenAI
 from openai.types.beta.threads import Message
 
 from bot.bot import Bot
 from bot.bot_factory import create_bot
 from bot.openai.open_ai_image import OpenAIImage
-from bot.openai.open_ai_session import OpenAISession
-from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 from common.log import logger
 from config import conf
@@ -28,17 +24,11 @@ class OpenAIAssBot(Bot, OpenAIImage):
 
     def __init__(self):
         super().__init__()
-        openai.api_key = conf().get("open_ai_api_key")
-        if conf().get("open_ai_api_base"):
-            openai.api_base = conf().get("open_ai_api_base")
-        proxy = conf().get("proxy")
-        if proxy:
-            openai.proxy = proxy
         # assistant id
         self.assistant_id = conf().get("open_ai_assistant_id")
         if not self.assistant_id:
             raise RuntimeError("未能获取到assistant_id,暂时不支持Api创建assistant")
-        self.client = OpenAI(api_key=conf().get("open_ai_api_key"))
+        self.client = openai.OpenAI(api_key=conf().get("open_ai_api_key"))
 
     '''
         创建运行
