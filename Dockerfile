@@ -1,3 +1,3 @@
-FROM fengjs/chat-on-wechat:v1
+FROM fengjs/chat-on-wechat:v2
 
 ENTRYPOINT ["/entrypoint.sh"]
