@@ -1,7 +1,6 @@
 # encoding:utf-8
 
-# from openai import OpenAI
-import openai
+from openai import OpenAI
 from openai.types.beta.threads import Message
 
 from bot.bot import Bot
@@ -28,7 +27,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
         self.assistant_id = conf().get("open_ai_assistant_id")
         if not self.assistant_id:
             raise RuntimeError("未能获取到assistant_id,暂时不支持Api创建assistant")
-        self.client = openai.OpenAI(api_key=conf().get("open_ai_api_key"))
+        self.client = OpenAI(api_key=conf().get("open_ai_api_key"))
 
     '''
         创建运行
