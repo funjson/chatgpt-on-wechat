@@ -183,7 +183,7 @@ class WechatChannel(ChatChannel):
             logger.debug("[WX]receive text msg: {}, cmsg={}".format(json.dumps(cmsg._rawmsg, ensure_ascii=False), cmsg))
         else:
             logger.debug("[WX]receive msg: {}, cmsg={}".format(cmsg.content, cmsg))
-        context = self._compose_context(cmsg.ctype, cmsg.content, isgroup=False, msg=cmsg)
+        context = self._compose_context(cmsg.ctype, cmsg.content, isgroup=False, msg=cmsg, from_user_id=cmsg.from_user_id)
         if context:
             self.produce(context)
 
@@ -205,7 +205,7 @@ class WechatChannel(ChatChannel):
             logger.debug(f"[WX]receive attachment msg, file_name={cmsg.content}")
         else:
             logger.debug("[WX]receive group msg: {}".format(cmsg.content))
-        context = self._compose_context(cmsg.ctype, cmsg.content, isgroup=True, msg=cmsg, no_need_at=conf().get("no_need_at", False))
+        context = self._compose_context(cmsg.ctype, cmsg.content, isgroup=True, msg=cmsg, no_need_at=conf().get("no_need_at", False),from_user_id=cmsg.from_user_id)
         if context:
             self.produce(context)
 
@@ -269,6 +269,7 @@ class WechatChannel(ChatChannel):
             itchat.send_video(video_storage, toUserName=receiver)
             logger.info("[WX] sendVideo url={}, receiver={}".format(video_url, receiver))
 
+
 def _send_login_success():
     try:
         from common.linkai_client import chat_client
@@ -294,4 +295,3 @@ def _send_qr_code(qrcode_list: list):
             chat_client.send_qrcode(qrcode_list)
     except Exception as e:
         pass
-

@@ -1,5 +1,6 @@
 # bot_type
 OPEN_AI = "openAI"
+OPEN_AI_ASS = "openAI_Assistant"
 CHATGPT = "chatGPT"
 BAIDU = "baidu"  # 百度文心一言模型
 XUNFEI = "xunfei"
