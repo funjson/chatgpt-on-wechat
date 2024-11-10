@@ -35,12 +35,10 @@ class OpenAIAssBot(Bot, OpenAIImage):
         if proxy:
             openai.proxy = proxy
         # assistant id
-        self.assistant_id = conf().get("open_ai_assistant_id", "asst_4pdE7aggI0fmuoJuK7otvJNE")
+        self.assistant_id = conf().get("open_ai_assistant_id")
         if not self.assistant_id:
             raise RuntimeError("未能获取到assistant_id,暂时不支持Api创建assistant")
-        self.client = OpenAI(
-            api_key=conf().get("open_ai_api_key",
-                               "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"))
+        self.client = OpenAI(api_key=conf().get("open_ai_api_key"))
 
     '''
         创建运行
