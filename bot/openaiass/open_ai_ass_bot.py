@@ -80,7 +80,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
         tool_outputs = []
 
         # 轮询命中的工具列表
-        if not run.required_action or not run.required_action.submit_tool_outputs:
+        if run.required_action.submit_tool_outputs:
             for tool in run.required_action.submit_tool_outputs.tool_calls:
                 logger.info(f"tools:{tool}")
                 response = '{"success":true}'
