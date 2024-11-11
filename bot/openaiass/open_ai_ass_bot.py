@@ -1,7 +1,6 @@
 # encoding:utf-8
 
-from openai import OpenAI
-from openai.types.beta.threads import Message
+import openai
 
 from bot.bot import Bot
 from bot.bot_factory import create_bot
@@ -27,7 +26,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
         self.assistant_id = conf().get("open_ai_assistant_id")
         if not self.assistant_id:
             raise RuntimeError("未能获取到assistant_id,暂时不支持Api创建assistant")
-        self.client = OpenAI(api_key=conf().get("open_ai_api_key"))
+        self.client = openai.OpenAI(api_key=conf().get("open_ai_api_key"))
 
     '''
         创建运行
@@ -85,7 +84,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
         logger.info(reply)
         return reply
 
-    def __reply_text(self, message: Message) -> Reply:
+    def __reply_text(self, message) -> Reply:
         reply = None
         if not message or not message.content:
             raise RuntimeError("返回数据异常")
