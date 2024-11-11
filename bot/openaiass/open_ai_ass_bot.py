@@ -80,60 +80,61 @@ class OpenAIAssBot(Bot, OpenAIImage):
         tool_outputs = []
 
         # 轮询命中的工具列表
-        for tool in run.required_action.submit_tool_outputs.tool_calls:
-            response = '{"success":true}'
-            # 判断是否是内置函数调用
-            if tool.function.name == 'get_current_time':
-                time = get_current_time()
-                response = f'{"success":{time}}'
-            else:
-                # 使用通用的函数调用方法
-                headers = {
-                    'Content-Type': 'application/json'
-                }
-                # 发送POST请求
-                params = json.loads(tool.function.arguments)
-                url = params["url"]
-                if not url:
-                    raise RuntimeError("该工具中没有必要参数URL")
+        if not run.required_action.submit_tool_outputs:
+            for tool in run.required_action.submit_tool_outputs.tool_calls:
+                logger.info(f"tools:{tool}")
+                response = '{"success":true}'
+                # 判断是否是内置函数调用
+                if tool.function.name == 'get_current_time':
+                    time = get_current_time()
+                    response = f'{"success":{time}}'
+                else:
+                    # 使用通用的函数调用方法
+                    headers = {
+                        'Content-Type': 'application/json'
+                    }
+                    # 发送POST请求
+                    params = json.loads(tool.function.arguments)
+                    url = params["url"]
+                    if not url:
+                        raise RuntimeError("该工具中没有必要参数URL")
+                    try:
+                        logger.info(f"url:{url},params:{params}")
+                        response = requests.post(url, json=params, headers=headers)
+                    except Exception as e:
+                        logger.warn("[OPEN_AI_ASS] FC ERROR: {}".format(e))
+                        response = '{"success":true}'
+                tool_outputs.append({
+                    "tool_call_id": tool.id,
+                    "output": json.dumps(response)
+                })
+
+            # 提交工具调用
+            if tool_outputs:
                 try:
-                    logger.info(f"url:{url},params:{params}")
-                    response = requests.post(url, json=params, headers=headers)
+                    run = self.client.beta.threads.runs.submit_tool_outputs_and_poll(
+                        thread_id=thread.id,
+                        run_id=run.id,
+                        tool_outputs=tool_outputs
+                    )
+                    print("Tool outputs submitted successfully.")
                 except Exception as e:
-                    logger.warn("[OPEN_AI_ASS] FC ERROR: {}".format(e))
-                    response = '{"success":true}'
-            tool_outputs.append({
-                "tool_call_id": tool.id,
-                "output": json.dumps(response)
-            })
+                    print("Failed to submit tool outputs:", e)
+            else:
+                print("No tool outputs to submit.")
 
-        # 提交工具调用
-        if tool_outputs:
-            try:
-                run = self.client.beta.threads.runs.submit_tool_outputs_and_poll(
+            if run.status == 'completed':
+                messages = self.client.beta.threads.messages.list(
                     thread_id=thread.id,
-                    run_id=run.id,
-                    tool_outputs=tool_outputs
+                    order="desc"
                 )
-                print("Tool outputs submitted successfully.")
-            except Exception as e:
-                print("Failed to submit tool outputs:", e)
-        else:
-            print("No tool outputs to submit.")
-
-        if run.status == 'completed':
-            messages = self.client.beta.threads.messages.list(
-                thread_id=thread.id,
-                order="desc"
-            )
-            for message in messages.data:
-                if message.role == 'assistant':
-                    print(message.json())
-                    replys.append(message)
-                    break
-        else:
-            print(run.status)
-
+                for message in messages.data:
+                    if message.role == 'assistant':
+                        print(message.json())
+                        replys.append(message)
+                        break
+            else:
+                print(run.status)
         return self.__reply_text(replys)
 
     def reply(self, query, context=None):
