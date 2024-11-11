@@ -146,19 +146,20 @@ class OpenAIAssBot(Bot, OpenAIImage):
         logger.info(replys)
         return replys
 
-    def __reply_text(self, message:[]) -> [Reply]:
-        reply = None
-        if not message or not message.content:
-            raise RuntimeError("返回数据异常")
-        print(message.content[0])
-        type = message.content[0].type
-        if type == 'text':
-            reply = Reply(ReplyType.TEXT, message.content[0].text.value)
-        elif type == 'image_url':
-            reply = Reply(ReplyType.TEXT, message.content[0].image_url.url)
-        elif type == 'image_file':
-            reply = Reply(ReplyType.IMAGE, message.content[0].image_file.file_id)
-        return reply
+    def __reply_text(self, messages: []) -> [Reply]:
+        replys = []
+        for message in messages:
+            if not message or not message.content:
+                raise RuntimeError("返回数据异常")
+            print(message.content[0])
+            type = message.content[0].type
+            if type == 'text':
+                replys.append(Reply(ReplyType.TEXT, message.content[0].text.value))
+            elif type == 'image_url':
+                replys.append(Reply(ReplyType.TEXT, message.content[0].image_url.url))
+            elif type == 'image_file':
+                replys.append(Reply(ReplyType.IMAGE, message.content[0].image_file.file_id))
+        return replys
 
 
 if __name__ == "__main__":

@@ -179,30 +179,29 @@ class ChatChannel(Channel):
 
                 if reply and reply.content:
                     reply = self._decorate_reply(context, reply)
-
                     # reply的发送步骤
                     self._send_reply(context, reply)
         else:
             # 对象不可迭代，可能是单个对象
             if replys and replys.content:
                 reply = self._decorate_reply(context, replys)
-
                 # reply的发送步骤
                 self._send_reply(context, reply)
 
     def _generate_reply(self, context: Context, reply: Reply = Reply()) -> [Reply]:
+        replys = []
         e_context = PluginManager().emit_event(
             EventContext(
                 Event.ON_HANDLE_CONTEXT,
                 {"channel": self, "context": context, "reply": reply},
             )
         )
-        reply = e_context["reply"]
+        replys.append(e_context["reply"])
         if not e_context.is_pass():
             logger.debug("[chat_channel] ready to handle context: type={}, content={}".format(context.type, context.content))
             if context.type == ContextType.TEXT or context.type == ContextType.IMAGE_CREATE:  # 文字和图片消息
                 context["channel"] = e_context["channel"]
-                reply = super().build_reply_content(context.content, context)
+                replys = super().build_reply_content(context.content, context)
             elif context.type == ContextType.VOICE:  # 语音消息
                 cmsg = context["msg"]
                 cmsg.prepare()
@@ -227,7 +226,7 @@ class ChatChannel(Channel):
                 if reply.type == ReplyType.TEXT:
                     new_context = self._compose_context(ContextType.TEXT, reply.content, **context.kwargs)
                     if new_context:
-                        reply = self._generate_reply(new_context)
+                        replys = self._generate_reply(new_context)
                     else:
                         return
             elif context.type == ContextType.IMAGE:  # 图片消息，当前仅做下载保存到本地的逻辑
@@ -242,7 +241,7 @@ class ChatChannel(Channel):
             else:
                 logger.warning("[chat_channel] unknown context type: {}".format(context.type))
                 return
-        return reply
+        return replys
 
     def _decorate_reply(self, context: Context, reply: Reply) -> Reply:
         if reply and reply.type:
