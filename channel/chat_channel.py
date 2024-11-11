@@ -3,6 +3,7 @@ import re
 import threading
 import time
 from asyncio import CancelledError
+from collections.abc import Iterable
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from bridge.context import *
@@ -167,18 +168,29 @@ class ChatChannel(Channel):
             return
         logger.debug("[chat_channel] ready to handle context: {}".format(context))
         # reply的构建步骤
-        reply = self._generate_reply(context)
+        replys = self._generate_reply(context)
 
-        logger.debug("[chat_channel] ready to decorate reply: {}".format(reply))
+        logger.debug("[chat_channel] ready to decorate reply: {}".format(replys))
 
         # reply的包装步骤
-        if reply and reply.content:
-            reply = self._decorate_reply(context, reply)
+        if isinstance(replys, Iterable):
+            # 对象是可迭代的
+            for reply in replys:
 
-            # reply的发送步骤
-            self._send_reply(context, reply)
+                if reply and reply.content:
+                    reply = self._decorate_reply(context, reply)
 
-    def _generate_reply(self, context: Context, reply: Reply = Reply()) -> Reply:
+                    # reply的发送步骤
+                    self._send_reply(context, reply)
+        else:
+            # 对象不可迭代，可能是单个对象
+            if replys and replys.content:
+                reply = self._decorate_reply(context, replys)
+
+                # reply的发送步骤
+                self._send_reply(context, reply)
+
+    def _generate_reply(self, context: Context, reply: Reply = Reply()) -> [Reply]:
         e_context = PluginManager().emit_event(
             EventContext(
                 Event.ON_HANDLE_CONTEXT,

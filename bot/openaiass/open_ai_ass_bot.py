@@ -1,10 +1,13 @@
 # encoding:utf-8
 
 import openai
+import requests
+import json
 
 from bot.bot import Bot
 from bot.bot_factory import create_bot
 from bot.openai.open_ai_image import OpenAIImage
+from bot.openaiass.open_ai_ass_tools import get_current_time
 from bridge.reply import Reply, ReplyType
 from common.log import logger
 from config import conf
@@ -14,7 +17,7 @@ from config import conf
 class OpenAIAssBot(Bot, OpenAIImage):
     assistant_id = ""
     instructions = ""
-    default_form_user_id="unknown"
+    default_form_user_id = "unknown"
     user_session = dict()
     assistant_session = dict()
     init_dict = dict()
@@ -34,8 +37,9 @@ class OpenAIAssBot(Bot, OpenAIImage):
         保持每个好友面对一个新的分身上下文
     '''
 
-    def __init_run_and_send_message(self, from_user_id, query) -> Reply:
+    def __init_run_and_send_message(self, from_user_id, query) -> [Reply]:
 
+        replys = []
         thread = None
         if not from_user_id:
             from_user_id = "unknown"
@@ -59,7 +63,6 @@ class OpenAIAssBot(Bot, OpenAIImage):
             instructions=self.instructions
         )
 
-        content = None
         if run.status == 'completed':
             messages = self.client.beta.threads.messages.list(
                 thread_id=thread.id,
@@ -68,23 +71,81 @@ class OpenAIAssBot(Bot, OpenAIImage):
             for message in messages.data:
                 if message.role == 'assistant':
                     print(message.json())
-                    content = message
+                    replys.append(message)
                     break
         else:
             print(run.status)
 
-        return self.__reply_text(content)
+        # 定义一个列表保存工具输出内容
+        tool_outputs = []
+
+        # 轮询命中的工具列表
+        for tool in run.required_action.submit_tool_outputs.tool_calls:
+            response = '{"success":true}'
+            # 判断是否是内置函数调用
+            if tool.function.name == 'get_current_time':
+                time = get_current_time()
+                response = f'{"success":{time}}'
+            else:
+                # 使用通用的函数调用方法
+                headers = {
+                    'Content-Type': 'application/json'
+                }
+                # 发送POST请求
+                params = json.loads(tool.function.arguments)
+                url = params["url"]
+                if not url:
+                    raise RuntimeError("该工具中没有必要参数URL")
+                try:
+                    logger.info(f"url:{url},params:{params}")
+                    response = requests.post(url, json=params, headers=headers)
+                except Exception as e:
+                    logger.warn("[OPEN_AI_ASS] FC ERROR: {}".format(e))
+                    response = '{"success":true}'
+            tool_outputs.append({
+                "tool_call_id": tool.id,
+                "output": json.dumps(response)
+            })
+
+        # 提交工具调用
+        if tool_outputs:
+            try:
+                run = self.client.beta.threads.runs.submit_tool_outputs_and_poll(
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    tool_outputs=tool_outputs
+                )
+                print("Tool outputs submitted successfully.")
+            except Exception as e:
+                print("Failed to submit tool outputs:", e)
+        else:
+            print("No tool outputs to submit.")
+
+        if run.status == 'completed':
+            messages = self.client.beta.threads.messages.list(
+                thread_id=thread.id,
+                order="desc"
+            )
+            for message in messages.data:
+                if message.role == 'assistant':
+                    print(message.json())
+                    replys.append(message)
+                    break
+        else:
+            print(run.status)
+
+        return self.__reply_text(replys)
 
     def reply(self, query, context=None):
         logger.info(f"context:{context}")
         from_user_id = "unknown"
         if context:
             from_user_id = context["from_user_id"]
-        reply = self.__init_run_and_send_message(from_user_id, query)
-        logger.info(reply)
-        return reply
+        replys = self.__init_run_and_send_message(from_user_id, query)
+        logger.info(replys)
+        return replys
 
-    def __reply_text(self, message) -> Reply:
+    def __reply_text(self, message:[]) -> [Reply]:
         reply = None
         if not message or not message.content:
             raise RuntimeError("返回数据异常")

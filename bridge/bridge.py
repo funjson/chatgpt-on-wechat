@@ -79,7 +79,7 @@ class Bridge(object):
     def get_bot_type(self, typename):
         return self.btype[typename]
 
-    def fetch_reply_content(self, query, context: Context) -> Reply:
+    def fetch_reply_content(self, query, context: Context) -> [Reply]:
         return self.get_bot("chat").reply(query, context)
 
     def fetch_voice_to_text(self, voiceFile) -> Reply:
