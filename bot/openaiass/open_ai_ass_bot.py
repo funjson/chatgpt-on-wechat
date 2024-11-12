@@ -87,7 +87,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
                 # 判断是否是内置函数调用
                 if tool.function.name == 'get_current_time':
                     time = get_current_time()
-                    response = f'{"success":{time}}'
+                    response = json.dumps({"success": time})
                 else:
                     # 使用通用的函数调用方法
                     headers = {
@@ -106,7 +106,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
                         response = '{"success":true}'
                 tool_outputs.append({
                     "tool_call_id": tool.id,
-                    "output": json.dumps(response)
+                    "output": json.loads(response)
                 })
 
             # 提交工具调用
