@@ -107,7 +107,7 @@ class OpenAIAssBot(Bot, OpenAIImage):
                         response = '{"success":true}'
                 tool_outputs.append({
                     "tool_call_id": tool.id,
-                    "output": json.loads(response)
+                    "output": response
                 })
 
             # 提交工具调用
