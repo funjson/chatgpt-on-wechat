@@ -100,7 +100,8 @@ class OpenAIAssBot(Bot, OpenAIImage):
                         raise RuntimeError("该工具中没有必要参数URL")
                     try:
                         logger.info(f"url:{url},params:{params}")
-                        response = requests.post(url, json=params, headers=headers)
+                        response_obj = requests.post(url, json=params, headers=headers)
+                        response = response_obj.json()
                     except Exception as e:
                         logger.warn("[OPEN_AI_ASS] FC ERROR: {}".format(e))
                         response = '{"success":true}'
